@@ -1,4 +1,5 @@
 import os
+from PIL import Image
 from uuid import uuid4
 from fastapi import FastAPI, File, UploadFile
 from fastapi.staticfiles import StaticFiles
@@ -16,8 +17,7 @@ model = torch.hub.load(
     'ultralytics/yolov5',
     'custom',
     path=os.path.join(MODELS_DIR, 'yolo_weights.pt'),
-    force_reload=True
-).autoshape()
+)
 
 app = FastAPI()
 app.mount('/images', StaticFiles(directory=MEDIA_DIR), name='images')
@@ -34,7 +34,7 @@ def predict(image: UploadFile = File(...)):
     # with open(os.path.join(MEDIA_DIR, filename), 'wb') as f:
     #     f.write(image.file.read())
     res = model(image.file)
-    res.save(os.path.join(MEDIA_DIR, filename))
+    res.imgs[0].save(os.path.join(MEDIA_DIR, filename))
     return {
         'url': f'/images/{filename}',
         'health': 100,

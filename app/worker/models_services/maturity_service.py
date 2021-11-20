@@ -5,10 +5,10 @@ from typing import BinaryIO
 from cv2 import cv2
 import collections
 
-from . import paths
+from app import paths
 
 
-class ModelsService:
+class MaturityService:
     yolo = torch.hub.load(
         'ultralytics/yolov5',
         'custom',
@@ -52,8 +52,8 @@ class ModelsService:
             pred['maturity'] = percentage
         return img
 
-    def get_strawberries_bboxes(self, image: BinaryIO) -> [Image, list[dict]]:
-        pil_image = Image.open(image)
+    def get_strawberries_bboxes(self, file_path: str, result_file_path: str) -> [Image, list[dict]]:
+        pil_image = Image.open(file_path)
         res = self.yolo(pil_image)
         # res.render()
         processed_preds = []
@@ -66,7 +66,8 @@ class ModelsService:
                 'confidence': cors.data[4].item(),
             })
         img = self.get_strawberries_maturity(res.imgs[0], processed_preds)
-        return Image.fromarray(img), processed_preds
+        Image.fromarray(img).save(result_file_path)
+        return processed_preds
 
 
-models_service = ModelsService()
+maturity_service = MaturityService()

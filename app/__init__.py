@@ -12,7 +12,12 @@ MEDIA_DIR = os.path.join(BASE_DIR, 'media')
 MODELS_DIR = os.path.join(BASE_DIR, 'models')
 
 # models
-model = torch.hub.load('ultralytics/yolov5', 'custom', path=os.path.join(MODELS_DIR, 'yolo_weights.pt'))
+model = torch.hub.load(
+    'ultralytics/yolov5',
+    'custom',
+    path=os.path.join(MODELS_DIR, 'yolo_weights.pt'),
+    force_reload=True
+)
 
 app = FastAPI()
 app.mount('/images', StaticFiles(directory=MEDIA_DIR), name='images')

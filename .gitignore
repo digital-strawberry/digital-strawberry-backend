@@ -1,5 +1,6 @@
 venv/
 .idea/
 media/
+models/
 
 **/__pycache__

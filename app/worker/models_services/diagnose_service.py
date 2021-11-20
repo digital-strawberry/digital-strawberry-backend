@@ -111,6 +111,7 @@ class DiagnoseService:
     def get_health_distribution(self, photo) -> np.array:
         return nn.functional.softmax(self.disease_classifier(photo)[0].detach().unsqueeze(0), dim=-1)[0].numpy()
 
+    # load healthcheck and disease_classifier models lazily for graphic memory saving
     @property
     def healthcheck(self):
         if self._healthcheck is None:

@@ -9,11 +9,19 @@ from app import paths
 
 
 class MaturityService:
-    yolo = torch.hub.load(
-        'ultralytics/yolov5',
-        'custom',
-        path=os.path.join(paths.MODELS_DIR, 'yolo_weights.pt'),
-    )
+    def __init__(self):
+        self._yolo = None
+
+    # load yolo model lazily for graphic memory saving
+    @property
+    def yolo(self):
+        if self._yolo is None:
+            self._yolo = torch.hub.load(
+                'ultralytics/yolov5',
+                'custom',
+                path=os.path.join(paths.MODELS_DIR, 'yolo_weights.pt'),
+            )
+        return self._yolo
 
     def draw_bb(self, img, pred, label):
         p1, p2 = (pred['xmin'], pred['ymin']), (pred['xmin'], pred['ymin'])

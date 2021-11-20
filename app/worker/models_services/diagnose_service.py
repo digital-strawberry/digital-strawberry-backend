@@ -83,6 +83,7 @@ class DiagnoseService:
                     yield cut
 
     def diagnose(self, file_path: str) -> Dict:
+        # TODO: process case when self.leaf_squares has len = 0
         total_distribution = np.zeros(9)
         square_counter = 0
         for square in self.leaf_squares(file_path):

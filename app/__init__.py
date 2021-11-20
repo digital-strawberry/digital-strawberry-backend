@@ -17,7 +17,7 @@ model = torch.hub.load(
     'custom',
     path=os.path.join(MODELS_DIR, 'yolo_weights.pt'),
     force_reload=True
-)
+).autoshape()
 
 app = FastAPI()
 app.mount('/images', StaticFiles(directory=MEDIA_DIR), name='images')

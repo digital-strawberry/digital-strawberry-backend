@@ -1,49 +1,27 @@
 import os
-from PIL import Image
 from uuid import uuid4
 from fastapi import FastAPI, File, UploadFile
 from fastapi.staticfiles import StaticFiles
-import torch
 
+from . import paths
 from .dto import StrawberryPredictions
+from .models_service import models_service
 
-# paths
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-MEDIA_DIR = os.path.join(BASE_DIR, 'media')
-MODELS_DIR = os.path.join(BASE_DIR, 'models')
-
-# models
-model = torch.hub.load(
-    'ultralytics/yolov5',
-    'custom',
-    path=os.path.join(MODELS_DIR, 'yolo_weights.pt'),
-)
-
-app = FastAPI()
-app.mount('/images', StaticFiles(directory=MEDIA_DIR), name='images')
+app = FastAPI(root_path='/api')
+app.mount('/images', StaticFiles(directory=paths.MEDIA_DIR), name='images')
 
 
 @app.get('/')
 async def index():
-    return 'hello world'
+    return 'ok'
 
 
 @app.post('/predict')
 def predict(image: UploadFile = File(...)):
     filename = f'{uuid4()}.{image.filename.rsplit(".", 1)[-1]}'
-    # with open(os.path.join(MEDIA_DIR, filename), 'wb') as f:
-    #     f.write(image.file.read())
-    res = model(image.file)
-    res.imgs[0].save(os.path.join(MEDIA_DIR, filename))
+    result_image, preds = models_service.get_strawberries_bboxes(image.file)
+    result_image.save(os.path.join(paths.MEDIA_DIR, filename))
     return {
-        'url': f'/images/{filename}',
-        'health': 100,
-        'entities': [
-            {
-                'x': 100,
-                'y': 100,
-                'width': 300,
-                'height': 300,
-            }
-        ]
+        'renderedImgUrl': f'/images/{filename}',
+        'predictions': preds,
     }

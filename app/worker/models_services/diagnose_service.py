@@ -19,8 +19,12 @@ class DiagnoseService:
             diseases_classifier_path: str = 'densenet_diseases_clf_224_96'
     ):
         self.RESCALE_SIZE = 224
-        self.set_healthcheck(binary_classifier_path)
-        self.set_diseases_classifier(diseases_classifier_path)
+        self.binary_classifier_path = binary_classifier_path
+        self._healthcheck = None
+        self.disease_classifier_path = diseases_classifier_path
+        self._disease_classifier = None
+        # self.set_healthcheck(binary_classifier_path)
+        # self.set_diseases_classifier(diseases_classifier_path)
         self.transform = transforms.Compose([
             transforms.ToTensor(),
         ])
@@ -106,19 +110,31 @@ class DiagnoseService:
     def get_health_distribution(self, photo) -> np.array:
         return nn.functional.softmax(self.disease_classifier(photo)[0].detach().unsqueeze(0), dim=-1)[0].numpy()
 
-    def set_healthcheck(self, binary_classifier_path):
-        self.healthcheck = models.densenet121(pretrained=True)
-        num_ftrs = self.healthcheck.classifier.in_features
-        self.healthcheck.classifier = nn.Linear(num_ftrs, 2)
-        self.healthcheck.load_state_dict(torch.load(binary_classifier_path, map_location=torch.device('cpu')))
-        self.healthcheck.eval()
+    @property
+    def healthcheck(self):
+        if self._healthcheck is None:
+            self._set_healthcheck()
+        return self._healthcheck
 
-    def set_diseases_classifier(self, diseases_classifier_path):
-        self.disease_classifier = models.densenet121(pretrained=True)
-        num_ftrs = self.disease_classifier.classifier.in_features
-        self.disease_classifier.classifier = nn.Linear(num_ftrs, 9)
-        self.disease_classifier.load_state_dict(torch.load(diseases_classifier_path, map_location=torch.device('cpu')))
-        self.disease_classifier.eval()
+    def _set_healthcheck(self):
+        self._healthcheck = models.densenet121(pretrained=True)
+        num_ftrs = self._healthcheck.classifier.in_features
+        self._healthcheck.classifier = nn.Linear(num_ftrs, 2)
+        self._healthcheck.load_state_dict(torch.load(self.binary_classifier_path, map_location=torch.device('cpu')))
+        self._healthcheck.eval()
+
+    @property
+    def disease_classifier(self):
+        if self._disease_classifier is None:
+            self._set_disease_classifier()
+        return self._disease_classifier
+
+    def _set_disease_classifier(self):
+        self._disease_classifier = models.densenet121(pretrained=True)
+        num_ftrs = self._disease_classifier.classifier.in_features
+        self._disease_classifier.classifier = nn.Linear(num_ftrs, 9)
+        self._disease_classifier.load_state_dict(torch.load(self.disease_classifier_path, map_location=torch.device('cpu')))
+        self._disease_classifier.eval()
 
 
 diagnose_service = DiagnoseService(

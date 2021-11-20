@@ -7,7 +7,7 @@ from cv2 import cv2
 from torchvision import models, transforms
 import torchvision.transforms.functional as F
 import torch.nn as nn
-from typing import Dict, BinaryIO
+from typing import Dict
 
 from app import paths
 

@@ -29,6 +29,33 @@ class DiagnoseService:
             transforms.ToTensor(),
         ])
         self.label_encoder = ['blight', 'measles', 'mold', 'powdery_meldew', 'rot', 'scorch', 'spider', 'spot', 'virus']
+        self.alchemy = {
+            'mold': {'фунгициды'},
+            'powdery-meldew': {'раствор кальцинированной соды', 'молочная сыворотка', 'раствор йода'},
+            'rot': {'фунгициды', 'бордоская смесь'},
+            'spider': {'пестициды'},
+            'spot': {'медные удобрения'}
+        }
+        self.cure_cookbook = {
+            'blight': {'temp-lo', 'hum-lo'},
+            'measles': {'hum-lo', 'light-hi', 'azot-lo', 'insects', 'weed'},
+            'mold': {'hum-lo', 'temp-hi', 'air-hi', 'light-hi', 'chem'},
+            'powdery_meldew': {'temp-lo', 'hum-lo', 'chem'},
+            'rot': {'temp-lo', 'hum-lo', 'chem'},
+            'scorch': {'weed', 'air-hi', 'hum-lo'},
+            'spider': {'azot-lo', 'water-hi', 'temp-lo', 'chem'},
+            'spot': {'chem', 'hum-lo'},
+            'virus': {'insects'}
+        }
+
+        self.measure_dict = {
+            'temp': 'температуру',
+            'light': 'освещённость',
+            'air': 'циркуляцию воздуха',
+            'hum': 'влажность',
+            'azot': 'количество азотных удобрений',
+            'water': 'частоту и объём полива'
+        }
 
     def prepare_photo(self, photo_path: str) -> np.array:
         image = Image.open(photo_path)
@@ -100,9 +127,9 @@ class DiagnoseService:
                 illness_list.append(self.label_encoder[i])
 
         return {
-            'health_rate': health_rate * 100,
-            'illness_list': illness_list,
-            'recommendations': []
+            'healthRate': health_rate * 100,
+            'illnessList': illness_list,
+            'recommendations': self.get_recommendations(illness_list)
         }
 
     def is_healthy(self, photo: np.array) -> bool:

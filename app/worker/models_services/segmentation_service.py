@@ -3,4 +3,4 @@ class SegmentationService:
         pass
 
 
-segmentation_service = SegmentationService()
+segmentation_service = SegmentationService(os.path.join(paths.MODELS_DIR, 'segmentation_weights.pt'))

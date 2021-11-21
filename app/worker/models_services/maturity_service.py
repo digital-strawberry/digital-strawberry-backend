@@ -1,11 +1,21 @@
 import os
+
+import numpy as np
 import torch
 from PIL import Image
-from typing import BinaryIO
 from cv2 import cv2
 import collections
 
 from app import paths
+
+
+def _convert_gray2rgb(image):
+    width, height = image.shape
+    out = np.empty((width, height, 3), dtype=np.uint8)
+    out[:, :, 0] = image
+    out[:, :, 1] = image
+    out[:, :, 2] = image
+    return out
 
 
 class MaturityService:
@@ -60,7 +70,12 @@ class MaturityService:
             pred['maturity'] = percentage
         return img
 
-    def get_strawberries_bboxes(self, file_path: str, result_file_path: str) -> [Image, list[dict]]:
+    def get_strawberries_bboxes(
+            self,
+            file_path: str,
+            result_file_path: str,
+            berries_mask: np.ndarray
+    ) -> [Image, list[dict]]:
         pil_image = Image.open(file_path)
         res = self.yolo(pil_image)
         # res.render()

@@ -22,6 +22,8 @@ class MaturityService:
     def __init__(self):
         self._yolo = None
 
+    gray = np.random.rand(256, 256)  # gray scale image
+    gray2rgb = _convert_gray2rgb(gray)
     # load yolo model lazily for graphic memory saving
     @property
     def yolo(self):
@@ -45,24 +47,27 @@ class MaturityService:
                     thickness=tf, lineType=cv2.LINE_AA)
         return img
 
-    def get_strawberries_maturity(self, img, preds):
+    def get_strawberries_maturity(self, img, preds, berries_mask):
         # img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+        berries_mask = np.asarray(berries_mask)
         for pred in preds:
             cropped_strawberry = img[pred['ymin']:pred['ymax'], pred['xmin']:pred['xmax']]
-
-            hsv_strawberry = cv2.cvtColor(cropped_strawberry, cv2.COLOR_RGB2HSV)
-            red1 = cv2.inRange(hsv_strawberry[:, :, 0], 170, 180)
-            red2 = cv2.inRange(hsv_strawberry[:, :, 0], 0, 10)
-            green = cv2.inRange(hsv_strawberry[:, :, 0], 28, 80)
-            red = cv2.bitwise_or(red1, red2)
-            stat = sum(collections.Counter(x)[255] for x in red)
-            total = red.shape[0] * red.shape[1] - sum(collections.Counter(x)[255] for x in green)
-            if total == 0:
-                percentage = 0.0
-            else:
-                percentage = round(stat / total / 0.8, 3)
-            if percentage > 1:
-                percentage = 1.0
+            cropped_mask_1d = berries_mask[pred['ymin']:pred['ymax'], pred['xmin']:pred['xmax']]
+            cropped_mask_3d = _convert_gray2rgb(cropped_mask_1d)
+            only_berry = np.multiply(cropped_strawberry, cropped_mask_3d)
+            estimate_sum = 0
+            hsv_strawberry = cv2.cvtColor(only_berry, cv2.COLOR_RGB2HSV)
+            for x in range(hsv_strawberry.shape[0]):
+                for y in range(hsv_strawberry.shape[1]):
+                    h, s, v = hsv_strawberry[x, y]
+                    if v <= 20:
+                        continue
+                    if s <= 40:
+                        estimate_sum += 0.5
+                    elif 170 <= h <= 180 or 0 <= h <= 10:
+                        estimate_sum += 1
+            estimate_sum /= (hsv_strawberry.shape[0] * hsv_strawberry.shape[1])
+            percentage = round(estimate_sum / 0.95, 3)
             cv2.rectangle(img, (pred['xmin'], pred['ymin']), (pred['xmax'], pred['ymax']), (255, 165, 0), 1)
 
             text = f'Maturity {percentage}'
@@ -88,7 +93,7 @@ class MaturityService:
                 'ymax': int(cors.data[3]),
                 'confidence': cors.data[4].item(),
             })
-        img = self.get_strawberries_maturity(res.imgs[0], processed_preds)
+        img = self.get_strawberries_maturity(res.imgs[0], processed_preds, berries_mask)
         Image.fromarray(img).save(result_file_path)
         return processed_preds
 
